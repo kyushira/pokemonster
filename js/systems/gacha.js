@@ -151,6 +151,10 @@ G.Gacha = (() => {
       }
 
       let isNew = false, refund = 0;
+      if (G.Admin) {   // admin panel: keep real pulls in its snapshot
+        G.Admin.earned('owned', mon.dex, { at: Date.now(), from: 'gacha' });
+        if (shiny) G.Admin.earned('shiny', mon.dex, { at: Date.now(), from: 'gacha' });
+      }
       if (shiny) {
         isNew = !save.shiny[mon.dex];
         if (isNew) save.shiny[mon.dex] = { at: Date.now(), from: 'gacha' };

@@ -134,6 +134,12 @@ G.Progress = (() => {
     if (!s) return;
     ensure(s);
     const S = s.stats;
+    if (G.Admin) {   // admin panel: keep real progress in its snapshot
+      if (kind === 'kill' && d.legend) G.Admin.earned('legends', d.legend);
+      if (kind === 'rift' && d.type) G.Admin.earned('arenas', d.type);
+      if (kind === 'evolve' && d.move) G.Admin.earned('evoMoves', d.move);
+      if (kind === 'item' && d.id) G.Admin.earned('itemsFound', d.id);
+    }
     switch (kind) {
       case 'kill':
         if (d.boss) S.bossesTotal = (S.bossesTotal || 0) + 1;
@@ -183,6 +189,9 @@ G.Progress = (() => {
   function checkAch() {
     const s = G.DB.save;
     if (!s) return;
+    // Admin panel switches on: don't award achievements (and their ticket/coin
+    // rewards) for unlocks that aren't real. They're checked again once all are off.
+    if (G.Admin && G.Admin.on) return;
     achT = performance.now();
     s.ach = s.ach || {};
     for (const a of G.AchDefs.LIST) {

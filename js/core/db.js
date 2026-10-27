@@ -139,6 +139,14 @@ G.DB = (() => {
    * servidor (firestore.rules, saves).
    */
   function sanitize(s) {
+    // Admin panel (systems/admin.js): snapshots of the real progress, { key: { at, data } }.
+    if (s.adminBackup != null) {
+      if (!isObj(s.adminBackup)) delete s.adminBackup;
+      else for (const k of Object.keys(s.adminBackup)) {
+        const b = s.adminBackup[k];
+        if (!isObj(b) || !isObj(b.data)) delete s.adminBackup[k];
+      }
+    }
     s.coins = num(s.coins);
     s.tickets.t1 = num(s.tickets.t1);
     s.tickets.t10 = num(s.tickets.t10);
@@ -1011,6 +1019,7 @@ G.DB = (() => {
   function owns(dex) { return !!(save && save.owned[dex]); }
 
   function grant(dex, from) {
+    if (G.Admin) G.Admin.earned('owned', dex, { at: Date.now(), from });   // admin panel: keep real catches
     if (!save.owned[dex]) save.owned[dex] = { at: Date.now(), from };
   }
 
@@ -1035,6 +1044,7 @@ G.DB = (() => {
   /** Da la versión shiny (y la normal, si no la tenía). Devuelve true si es nueva. */
   function grantShiny(dex, from) {
     grant(dex, from);
+    if (G.Admin) G.Admin.earned('shiny', dex, { at: Date.now(), from });
     if (save.shiny[dex]) return false;
     save.shiny[dex] = { at: Date.now(), from };
     return true;

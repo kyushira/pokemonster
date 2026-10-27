@@ -1084,3 +1084,24 @@ html:lang(zh) .btn, html:lang(zh) .chip { letter-spacing: 0; }
   .topbar .btn.small { padding: 2px 4px; }
   .topbar img { width: 14px; height: 14px; }
 }
+
+/* ---------- admin panel (js/systems/admin.js, personal copy) ---------- */
+#scr-admin { z-index: 61; }
+.adm-add .field { width: 130px; min-width: 0; padding: 6px 8px; }
+.adm-add .btn { min-width: 64px; }
+.adm-toggles .set-row .chip { white-space: nowrap; font-variant-numeric: tabular-nums; }
+@media (max-height: 520px) {
+  #scr-admin { padding: 6px 10px; }
+  #scr-admin .box.settings { max-height: calc(100dvh - 12px); }
+  /* landscape phones: two columns of switches so they fit without endless scrolling */
+  .adm-toggles { display: grid; grid-template-columns: 1fr 1fr; column-gap: 14px; }
+  .adm-toggles .set-row small { display: none; }
+  .adm-add small { display: inline; }
+}
+@media (max-width: 420px) {
+  .adm-add { flex-wrap: wrap; }
+  .adm-add .field { flex: 1; }
+}
+@media (pointer: coarse) {
+  #scr-admin .btn.small, #scr-admin .field { min-height: 38px; }
+}
