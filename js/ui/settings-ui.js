@@ -164,6 +164,7 @@ G.SettingsUI = (() => {
       + `<div class="row wrap" style="gap:8px;margin-top:12px">
            <button class="btn" id="set-logout">Cerrar sesión</button>
            <button class="btn danger" id="set-delete">Borrar cuenta</button>
+           <button class="btn gold" id="set-admin">Admin mode</button>
          </div><p class="note" id="set-msg"></p>`;
   }
 
@@ -176,6 +177,7 @@ G.SettingsUI = (() => {
     const lay = $('set-layout'); if (lay) lay.onclick = () => G.LayoutUI.open();
     box.querySelectorAll('[data-lang]').forEach(b => { b.onclick = () => { if (b.dataset.lang !== G.I18n.lang) G.I18n.set(b.dataset.lang); }; });
     const lo = $('set-login'); if (lo) lo.onclick = () => { close(); leave(); };
+    const adm = $('set-admin'); if (adm) adm.onclick = () => G.Admin.prompt();
     const out = $('set-logout'); if (out) out.onclick = () => { close(); leave(); };
     const del = $('set-delete');
     if (del) del.onclick = async () => {
