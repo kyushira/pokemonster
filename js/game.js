@@ -1086,7 +1086,7 @@ G.Game = (() => {
       tampered = true;
       pl.level = Math.max(1, Math.min(200, Math.floor(n)));
       pl.xp = 0; pl.xpNext = G.Player.xpFor(pl.level);
-      if (G.Evolve) while (pl.level >= (G.Evolve.LEVELS[pl.evoStage || 0] || Infinity)) pl.evoStage = (pl.evoStage || 0) + 1;
+      if (G.Evolve) G.Evolve.check(pl);       // evoluciona si cruza el nivel 10/20 (una etapa tras otra)
     },
     get time() { return time; },
     toUI() { state = 'ui'; if (cv) cv.style.cursor = ''; Backdrop.restore(); },
