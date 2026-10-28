@@ -109,7 +109,7 @@ G.Admin = (() => {
     if (b.data[id] == null) b.data[id] = value != null ? value : Date.now();
   }
 
-  /** Add coins ('coins') or gacha tickets ('t1' / 't10'). → { ok, saved, value, error? } */
+  /** Add coins ('coins'), gacha tickets ('t1' / 't10') or Lab Research ('research'). → { ok, saved, value, error? } */
   function add(what, amount) {
     if (!usable()) return { ok: false, error: 'Admin mode needs an account (guest saves are not kept).' };
     const n = Math.floor(+amount);
@@ -120,9 +120,10 @@ G.Admin = (() => {
     else if (what === 't1' || what === 't10') {
       s.tickets = Object.assign({ t1: 0, t10: 0 }, s.tickets);
       s.tickets[what] = (s.tickets[what] || 0) + n;
-    } else return { ok: false, error: 'Unknown currency ' + what };
+    } else if (what === 'research') s.labPts = Math.max(0, Math.floor(+s.labPts || 0)) + n;   // Lab points (systems/lab.js)
+    else return { ok: false, error: 'Unknown currency ' + what };
     const saved = G.DB.commit();
-    return { ok: true, saved, value: what === 'coins' ? s.coins : s.tickets[what] };
+    return { ok: true, saved, value: what === 'coins' ? s.coins : what === 'research' ? s.labPts : s.tickets[what] };
   }
 
   // ---------------- panel ----------------
@@ -160,6 +161,7 @@ G.Admin = (() => {
       + addRow('coins', 'Coins', s.coins || 0)
       + addRow('t1', 'Gacha tickets ×1', t.t1)
       + addRow('t10', 'Gacha tickets ×10', t.t10)
+      + addRow('research', 'Research (Lab)', Math.max(0, Math.floor(+s.labPts || 0)))
       + `<h3 class="set-h">Unlocks</h3><p class="sub">Turning a switch off brings back your real progress from before you turned it on (plus anything you earned since).</p>
          <div class="adm-toggles">`
       + TOGGLES.map(([k, label, desc]) => {
