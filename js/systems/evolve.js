@@ -87,6 +87,7 @@ G.Evolve = (() => {
     api.become(pl, G.U.pick(opts), { fx: true }).then(ok => {
       pl.evoBusy = false;
       if (ok) pl.evolutions = (pl.evolutions || 0) + 1;
+      if (ok) check(pl);                                 // p. ej. el sandbox salta del 5 al 25: falta la 2.ª etapa
     }, () => { pl.evoBusy = false; });
   }
 

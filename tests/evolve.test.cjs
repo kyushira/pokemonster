@@ -62,6 +62,18 @@ test('check(): evolves at levels 10 and 20, once each, and skips single-stage Po
   real.check(coop); assert.deepEqual(calls, [814, 815]);                 // not in co-op
 });
 
+test('check(): a jump past level 20 (sandbox set level) evolves twice in a row', async () => {
+  const G = load();
+  const calls = [];
+  G.Evolve.become = (pl, dex) => { calls.push(dex); pl.dex = dex; return Promise.resolve(true); };
+  G.U = { pick: a => a[0] };
+  const pl = { dex: 813, level: 25, dead: false };
+  G.Evolve.check(pl);
+  await new Promise(r => setTimeout(r, 0));
+  assert.deepEqual(calls, [814, 815]);
+  assert.equal(pl.evolutions, 2);
+});
+
 test('monAs(): the evolved form gets its own base stats', () => {
   const G = load();
   const a = G.Evolve.monAs(813, 813), b = G.Evolve.monAs(815, 813);
