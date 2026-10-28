@@ -56,7 +56,11 @@ G.RunUI = (() => {
     $('lvl-wait').classList.toggle('hidden', !coop);
     $('cards').classList.remove('done');
     renderCards(list);
-    if (!$('lvl-reroll').dataset.tap) { $('lvl-reroll').dataset.tap = 1; onTap($('lvl-reroll'), reroll); }
+    if (!$('lvl-reroll').dataset.tap) {
+      $('lvl-reroll').dataset.tap = 1; onTap($('lvl-reroll'), reroll);
+      onTap($('lvl-skip'), skip); onTap($('lvl-ban'), toggleBan);
+    }
+    banMode = false;
     G.UI.show('scr-levelup');
     guard($('cards'));
   }
@@ -79,11 +83,62 @@ G.RunUI = (() => {
     renderCards(G.LevelUp.offer(p));
   }
 
+  /*
+   * Saltar y Vetar (copia personal, idea de PokéTide), con cargas por partida:
+   *  - Saltar: cierras las cartas sin coger ninguna.
+   *  - Vetar: tocas un movimiento nuevo de las cartas y no vuelve a salir en
+   *    esta partida (las cartas se vuelven a repartir). Aparte del Veto de Mejoras.
+   * En grupo no salen (todos eligen a la vez).
+   */
+  const SKIPS = 2, BANS = 2;
+  let banMode = false;
+  const skipsLeft = p => Math.max(0, SKIPS - (p.skips || 0));
+  const bansLeft = p => Math.max(0, BANS - (p.runBans || 0));
+
+  function skip() {
+    const p = G.Game.player;
+    if (!offers || coopMode || !p || skipsLeft(p) <= 0 || guarded()) return;
+    p.skips = (p.skips || 0) + 1;
+    const cb = offerCb;
+    offers = null; offerCb = null; banMode = false;
+    G.UI.hide('scr-levelup');
+    cb(null);
+  }
+
+  function toggleBan() {
+    const p = G.Game.player;
+    if (!offers || coopMode || !p || bansLeft(p) <= 0) return;
+    banMode = !banMode;
+    G.Audio.sfx('select');
+    renderCards(offers);
+  }
+
+  function banCard(i) {
+    const p = G.Game.player, c = offers && offers[i];
+    if (!c || !/^new:/.test(c.key || '') || bansLeft(p) <= 0) return;
+    p.runBans = (p.runBans || 0) + 1;
+    p.banned.add(c.key.slice(4));
+    banMode = false;
+    G.Audio.sfx('back');
+    renderCards(G.LevelUp.offer(p));
+  }
+
   function renderCards(list) {
     offers = list;
     const left = rerollsLeft();
     $('lvl-rr-n').textContent = left;
     $('lvl-reroll').classList.toggle('hidden', left <= 0);
+    const p = G.Game.player, solo = !coopMode && p;
+    const canBan = solo && bansLeft(p) > 0 && list.some(c => /^new:/.test(c.key || ''));
+    if (!canBan) banMode = false;
+    $('lvl-skip-n').textContent = solo ? skipsLeft(p) : 0;
+    $('lvl-skip').classList.toggle('hidden', !solo || skipsLeft(p) <= 0);
+    $('lvl-ban-n').textContent = solo ? bansLeft(p) : 0;
+    $('lvl-ban').classList.toggle('hidden', !canBan);
+    $('lvl-ban').classList.toggle('gold', banMode);
+    $('lvl-ban').classList.toggle('ghost', !banMode);
+    $('lvl-ban-hint').classList.toggle('hidden', !banMode);
+    $('cards').classList.toggle('ban-mode', banMode);
     const box = $('cards');
     box.innerHTML = '';
     list.forEach((c, i) => {
@@ -95,6 +150,7 @@ G.RunUI = (() => {
           ? `<span class="tag-chip" style="background:${c.color}">${c.tag}</span>`
           : `<span class="tag-chip" style="background:${c.color === '#ffd23f' ? '#ffd23f' : '#9fb1c9'}">${c.tag}</span>`;
       if (c.type === 'evo') el.classList.add('evo');
+      if (banMode && !/^new:/.test(c.key || '')) el.classList.add('no-ban');
       el.innerHTML =
         `<div class="ico" style="background:${c.color}33">${G.Icons.html(c.icon, 32)}</div>
          <div class="txt"><div class="nm">${c.title} ${tag}</div><div class="ds">${c.desc}</div></div>
@@ -107,9 +163,11 @@ G.RunUI = (() => {
 
   function pick(i) {
     if (!offers || !offers[i] || guarded()) return;
+    if (banMode) { banCard(i); return; }
     const c = offers[i], cb = offerCb;
     offers = null; offerCb = null;
     $('lvl-reroll').classList.add('hidden');
+    $('lvl-skip').classList.add('hidden'); $('lvl-ban').classList.add('hidden');
     if (coopMode) {
       // Se queda la carta elegida a la vista mientras eligen los demás.
       $('cards').querySelectorAll('.card').forEach((el, j) => el.classList.toggle('picked', j === i));
@@ -381,6 +439,9 @@ G.RunUI = (() => {
     G.UI.soundControls($('pause-sound'));
     $('pause-coop').classList.toggle('hidden', !coop);
     $('btn-quit').textContent = coop ? 'Salir de la partida' : 'Abandonar run';
+    // Sandbox del admin (systems/sandbox.js): sólo con cuenta y en solitario.
+    $('btn-sandbox').classList.toggle('hidden', coop || !(G.Sandbox && G.Sandbox.available()));
+    $('btn-sandbox').onclick = () => G.Sandbox.open();
     G.UI.show('scr-pause');
   }
 

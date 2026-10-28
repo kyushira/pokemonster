@@ -147,6 +147,7 @@ G.DB = (() => {
         if (!isObj(b) || !isObj(b.data)) delete s.adminBackup[k];
       }
     }
+    if (G.Lab) G.Lab.sanitize(s);     // Laboratorio (systems/lab.js): lab / labPts
     s.coins = num(s.coins);
     s.tickets.t1 = num(s.tickets.t1);
     s.tickets.t10 = num(s.tickets.t10);

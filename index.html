@@ -77,7 +77,7 @@
   ]
 }
 </script>
-<link rel="stylesheet" href="css/style.css?v=dfac969fd7">
+<link rel="stylesheet" href="css/style.css?v=5b9820267c">
 <script src="js/core/locales.js?v=5566014165"></script>
 <script src="js/noframe.js"></script>
 </head>
@@ -184,6 +184,7 @@
         <button class="menu-item play" data-go="play">Jugar<small>Entra en la mazmorra</small></button>
         <button class="menu-item" data-go="dex">Pokémon<small id="menu-dex-count">Tu colección</small></button>
         <button class="menu-item" data-go="upgrades">Mejoras<small>Haz más fuerte cada run</small></button>
+        <button class="menu-item" data-go="lab" translate="no">Lab<small id="menu-lab-sub">Upgrades for every Pokémon</small></button>
         <button class="menu-item" data-go="shop">Tienda Kecleon<small>Mentas, Cápsulas y MT</small></button>
         <button class="menu-item" data-go="bag">Mochila<small id="menu-bag-sub">Vacía</small></button>
         <button class="menu-item" data-go="gacha">Gacha<small>9 regiones · Pokémon y shinies</small></button>
@@ -556,7 +557,12 @@
     <h2>¡Nivel <span id="lvl-num">2</span>!</h2>
     <p class="sub">Elige una recompensa<span class="kbd-hint"> · <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></span></p>
     <div id="cards" class="cards"></div>
-    <button id="lvl-reroll" class="btn small ghost hidden" data-sfx="none" style="margin-top:10px">Cambiar opciones (<span id="lvl-rr-n">1</span>)<span class="kbd-hint"> · <kbd>R</kbd></span></button>
+    <p id="lvl-ban-hint" class="note hidden" translate="no">Tap the new move you never want to see again this run</p>
+    <div class="row lvl-tools">
+      <button id="lvl-reroll" class="btn small ghost hidden" data-sfx="none">Cambiar opciones (<span id="lvl-rr-n">1</span>)<span class="kbd-hint"> · <kbd>R</kbd></span></button>
+      <button id="lvl-ban" class="btn small ghost hidden" data-sfx="none" translate="no">Ban (<span id="lvl-ban-n">2</span>)</button>
+      <button id="lvl-skip" class="btn small ghost hidden" data-sfx="none" translate="no">Skip (<span id="lvl-skip-n">2</span>)</button>
+    </div>
     <p id="lvl-wait" class="note hidden"></p>
   </div>
 </section>
@@ -589,6 +595,7 @@
       <button id="btn-resume" class="btn gold">Continuar</button>
       <button id="btn-pause-settings" class="btn">Ajustes</button>
       <button id="btn-quit" class="btn">Abandonar run</button>
+      <button id="btn-sandbox" class="btn hidden" translate="no">Sandbox</button>
     </div>
     <div id="pause-sum" class="pause-sum"></div>
     <div id="pause-sound" class="sound-inline"></div>
@@ -604,6 +611,6 @@
 </section>
 
 <!-- datos generados -->
-<script defer src="js/app.min.js?v=a695989c4d"></script>
+<script defer src="js/app.min.js?v=7cdc99fca6"></script>
 </body>
 </html>

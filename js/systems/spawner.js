@@ -209,5 +209,12 @@ G.Spawner = (() => {
   function tickBanner(dt) { if (announceT > 0) announceT -= dt; }
 
   return { reset, update, ahead, burst, outR, tickBanner, banner, say, rate, SHINY_RATE, CAP,
-           debugForceShiny(n = 1) { forceShiny = n; } };
+           debugForceShiny(n = 1) { forceShiny = n; },
+           /** Sandbox del admin: un jefe ya (el siguiente de la partida, o con otro Pokémon). */
+           debugBoss(dex) {
+             const list = G.Enemies.BOSSES, pl = anchor() || G.Game.player, t = G.Game.st.time;
+             const b = list[Math.min(bossIdx, list.length - 1)];
+             const def = dex && G.DEX_BY[dex] ? Object.assign({}, b, { dex, name: G.DEX_BY[dex].name }) : Object.assign({}, b);
+             return G.Sprites.preload([def.dex]).then(() => spawnBoss(pl, t, def));
+           } };
 })();

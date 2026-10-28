@@ -215,18 +215,96 @@ G.Admin = (() => {
     dirty = false;
   }
 
+  // ---------------- passcode keypad (game-styled, replaces window.prompt) ----------------
+
+  /** Unlocked for this page session (the sandbox in a run asks only once). */
+  let unlocked = false;
+  let askDone = null, typed = '';
+
+  function codeScreen() {
+    let el = document.getElementById('scr-admin-code');
+    if (el) return el;
+    el = document.createElement('section');
+    el.id = 'scr-admin-code';
+    el.className = 'scr dim hidden';
+    el.setAttribute('translate', 'no');
+    const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'del', '0', 'ok'];
+    el.innerHTML = `<div class="box center adm-code">
+        <h2>Admin mode</h2>
+        <p class="sub">Enter the passcode</p>
+        <div class="adm-dots" id="adm-dots"></div>
+        <p class="adm-err" id="adm-err"></p>
+        <div class="adm-pad">${keys.map(k => `<button class="btn ${k === 'ok' ? 'gold' : k === 'del' ? 'ghost' : ''}" data-k="${k}" data-sfx="none">${k === 'del' ? '←' : k === 'ok' ? 'OK' : k}</button>`).join('')}</div>
+        <button class="btn small ghost" id="adm-code-cancel">Cancel</button>
+      </div>`;
+    document.body.appendChild(el);
+    el.querySelectorAll('[data-k]').forEach(b => {
+      b.addEventListener('pointerdown', e => { e.preventDefault(); press(b.dataset.k); });
+      b.onclick = e => { if (e.detail === 0) press(b.dataset.k); };     // (keyboard / no pointer)
+    });
+    el.querySelector('#adm-code-cancel').onclick = () => finish(false);
+    el.addEventListener('pointerdown', e => { if (e.target === el) finish(false); });
+    addEventListener('keydown', e => {
+      if (!askDone) return;
+      if (/^[0-9]$/.test(e.key)) press(e.key);
+      else if (e.key === 'Backspace') press('del');
+      else if (e.key === 'Enter') press('ok');
+      else if (e.key === 'Escape') finish(false);
+      else return;
+      e.preventDefault(); e.stopImmediatePropagation();
+    }, true);
+    return el;
+  }
+
+  function dots(err) {
+    const d = document.getElementById('adm-dots');
+    d.innerHTML = Array.from({ length: Math.max(4, typed.length) }, (_, i) => `<i class="${i < typed.length ? 'on' : ''}"></i>`).join('');
+    document.getElementById('adm-err').textContent = err || '';
+    d.classList.toggle('bad', !!err);
+  }
+
+  function press(k) {
+    if (!askDone) return;
+    if (k === 'del') { typed = typed.slice(0, -1); G.Audio.sfx('back'); dots(); return; }
+    if (k === 'ok') {
+      if (typed === PASSCODE) { G.Audio.sfx('confirm'); unlocked = true; finish(true); }
+      else { G.Audio.sfx('back'); typed = ''; dots('Wrong passcode'); }
+      return;
+    }
+    if (typed.length >= 8) return;
+    typed += k; G.Audio.sfx('select'); dots();
+    if (typed.length === PASSCODE.length && typed === PASSCODE) press('ok');
+  }
+
+  function finish(ok) {
+    const done = askDone;
+    askDone = null; typed = '';
+    const el = document.getElementById('scr-admin-code');
+    if (el) el.classList.add('hidden');
+    if (done) done(ok);
+  }
+
+  /** Asks for the passcode in the game's own dialog. → Promise<boolean> */
+  function ask() {
+    if (unlocked) return Promise.resolve(true);
+    if (askDone) finish(false);
+    return new Promise(res => {
+      askDone = res; typed = '';
+      codeScreen().classList.remove('hidden');
+      dots();
+    });
+  }
+
   /** Settings → Account → "Admin mode": passcode, then the panel. */
   function prompt() {
     if (!usable()) { G.UI.toast('Admin mode needs an account (guest saves are not kept).', 3500); return; }
-    const code = window.prompt('Admin passcode:');
-    if (code == null) return;
-    if (code.trim() !== PASSCODE) { G.UI.toast('Wrong passcode'); return; }
     if (G.SettingsUI && G.SettingsUI.isOpen) G.SettingsUI.close();
-    open();
+    ask().then(ok => { if (ok) open(); });
   }
 
   return {
-    TOGGLES, prompt, open, close, setToggle, add, earned, count, isOn,
+    TOGGLES, prompt, ask, open, close, setToggle, add, earned, count, isOn, usable,
+    get unlocked() { return unlocked; },
     get on() { return TOGGLES.some(([k]) => isOn(k)); }
   };
 })();

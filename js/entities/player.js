@@ -11,6 +11,7 @@ G.Player = class Player {
   constructor(mon, perks = {}, shiny = false) {
     this.mon = mon;
     this.dex = mon.dex;
+    this.partnerDex = mon.dex;   // con el que empezaste, aunque evolucione (systems/evolve.js)
     this.shiny = shiny && G.Sprites.hasShiny(mon.dex);
     // Los grandes, algo más pequeños y con el choque de uno normal (ver sprites.js).
     this.scale = G.Sprites.playerScale(mon.dex);
@@ -258,7 +259,7 @@ G.Player = class Player {
    */
   /** @param cat  'physical' | 'special': con qué defensa tuya se para (la del enemigo que pega). */
   hurt(amount, type = null, pure = false, cat = null) {
-    if (this.invuln > 0 || this.dead) return;
+    if (this.invuln > 0 || this.dead || this.god) return;     // god: sandbox del admin
     // Habilidad (data/ability-fx.js): absorber un tipo, esquivar o recibir menos.
     const ab = this.abil, cls = cat === 'physical' ? 'p' : cat === 'special' ? 's' : '';
     if (ab && !pure) {
@@ -382,6 +383,7 @@ G.Player = class Player {
     if (this.invuln > 0) this.invuln -= dt;
     if (this.flash > 0) this.flash -= dt;
     if (this.attackFace > 0) this.attackFace -= dt;
+    if (this.evoFx > 0 && (this.evoFx -= dt) <= 0) { this.evoFx = 0; this.evoOld = null; }
 
     for (const k in this.buffs) {
       const b = this.buffs[k];
@@ -574,7 +576,18 @@ G.Player = class Player {
     }
 
     const alpha = this.invuln > 0 && !this.dead ? (Math.floor(this.invuln * 18) % 2 ? 0.45 : 1) : 1;
-    this.anim.draw(ctx, this.x, this.y, { flash: this.flash > 0, softFlash: true, alpha, color: '#ffcb3d' });
+    if (this.evoFx > 0 && this.evoOld) {
+      // Evolución (systems/evolve.js): silueta blanca que alterna entre la forma vieja
+      // y la nueva, cada vez más deprisa, con un halo de luz.
+      const k = 1 - this.evoFx / 1.6, rate = 5 + k * 18;
+      const old = this.evoFx > 0.35 && Math.floor(performance.now() / 1000 * rate) % 2 === 0;
+      ctx.save();
+      ctx.globalAlpha = 0.35 + 0.25 * Math.sin(performance.now() / 70);
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.ellipse(this.x, this.y - this.bodyH / 2, this.r * 3, this.bodyH * 0.9, 0, 0, 6.2832); ctx.fill();
+      ctx.restore();
+      (old ? this.evoOld : this.anim).draw(ctx, this.x, this.y, { flash: this.evoFx > 0.35, softFlash: false, alpha: 1, color: '#ffffff' });
+    } else this.anim.draw(ctx, this.x, this.y, { flash: this.flash > 0, softFlash: true, alpha, color: '#ffcb3d' });
 
     // Arcos de buff alrededor de los pies.
     const COL = { atk: '#ff6b4d', patk: '#ff6b4d', satk: '#c47bff', spd: '#7fe0ff', def: '#b0b8c8', regen: '#5fe08a' };

@@ -187,6 +187,7 @@ G.Game = (() => {
     pl = new G.Player(mon, perks, !!save.partnerShiny && G.DB.ownsShiny(mon.dex));
     G.Orbs.reset();
     pl.setAbility(G.Mons.abilityOf(mon.dex).id);
+    G.Lab.apply(pl, save);          // el Laboratorio: mejoras de toda la cuenta (systems/lab.js)
     pl.anim.skin = G.Skins.worn(save, mon.dex) || null;      // su disfraz (core/skins.js)
     pl.candy = 0;
     banked = { t1: 0, t10: 0, cn: 0 };
@@ -416,7 +417,7 @@ G.Game = (() => {
     G.Halloween.runEnd();
     save.stats.runs++;
     save.pused = save.pused || {};
-    save.pused[pl.dex] = (+save.pused[pl.dex] || 0) + 1;     // para "más usados" en la colección
+    save.pused[pl.partnerDex] = (+save.pused[pl.partnerDex] || 0) + 1;     // para "más usados" en la colección
     save.stats.totalKills += pl.kills;
     save.stats.bestTime = Math.max(save.stats.bestTime, Math.floor(time));
     if (coop) save.stats.bestGroupTime = Math.max(save.stats.bestGroupTime || 0, Math.floor(time));
@@ -427,15 +428,18 @@ G.Game = (() => {
     G.Judgment.reset();
     G.Progress.event('runEnd', { time, level: pl.level, coins: pl.coins, types: pl.mon.types, group: coop });
     G.Progress.checkAch();
+    // Laboratorio (systems/lab.js): investigación por minuto y por jefe (no en partidas tocadas).
+    const research = G.Lab.bank(save, G.Lab.earned(time, pl.bosses, !clean()));
     // Se guarda en este aparato; a la nube sube al pulsar Guardar (ver db.js).
     G.DB.commit('run');
+    if (research) setTimeout(() => G.UI.toast('+' + research + ' Research for the Lab', 3500), 600);
     if (G.Social.me) G.Social.publishProfile();
 
     // Ranking: en solitario cada uno lo suyo; en grupo lo sube el anfitrión.
     const mark = { t: Math.floor(time), lv: pl.level, kills: pl.kills, dmg: judge ? judge.dmg : 0 };   // dmg: a Arceus
     // Si la partida se ha tocado (ver clean()), no sube al ranking (sin avisar); lo demás, sí.
     const ok = clean();
-    const sent = ok && !coop ? G.Ranking.submitSolo(Object.assign(mark, { dex: pl.dex, shiny: pl.shiny }))
+    const sent = ok && !coop ? G.Ranking.submitSolo(Object.assign(mark, { dex: pl.partnerDex, shiny: pl.shiny }))
                : ok && wasHost ? G.Ranking.submitGroup(Object.assign(mark, { members: team })) : null;
     if (sent) sent.catch(() => {});
 
@@ -486,8 +490,9 @@ G.Game = (() => {
     G.Audio.sfx('levelup');
     G.RunUI.showLevelUp(pl.level, G.LevelUp.offer(pl), card => {
       G.Audio.sfx('confirm');
-      card.apply(pl);
+      if (card) card.apply(pl);               // (null: cartas saltadas, ver run-ui.js)
       state = 'playing';
+      G.Evolve.check(pl);                     // evolución a mitad de partida (systems/evolve.js)
     });
   }
 
@@ -1069,6 +1074,21 @@ G.Game = (() => {
     quit() { if (state !== 'ui' && state !== 'over') quitRun(); },
     /** Para grabar vídeos: abre las cartas de subir de nivel. */
     debugLevelUp() { tampered = true; pl.level++; pendingLevels++; },
+    /**
+     * Sandbox del admin (systems/sandbox.js): cualquier cosa que toque deja la
+     * partida marcada como tocada, así que no sube al ranking (ver clean()).
+     */
+    sandboxUsed() { tampered = true; if (pl) pl.sandbox = true; },
+    get tampered() { return tampered; },
+    /** Sandbox: pone el nivel sin cartas (y la evolución que toque). */
+    debugSetLevel(n) {
+      if (!pl) return;
+      tampered = true;
+      pl.level = Math.max(1, Math.min(200, Math.floor(n)));
+      pl.xp = 0; pl.xpNext = G.Player.xpFor(pl.level);
+      if (G.Evolve) while (pl.level >= (G.Evolve.LEVELS[pl.evoStage || 0] || Infinity)) pl.evoStage = (pl.evoStage || 0) + 1;
+    },
+    get time() { return time; },
     toUI() { state = 'ui'; if (cv) cv.style.cursor = ''; Backdrop.restore(); },
     get state() { return state; }, get player() { return pl; }, st
   };

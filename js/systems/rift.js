@@ -96,11 +96,15 @@ G.Rift = (() => {
 
   /** Quien manda: elige legendario y lugar, y avisa a todos. */
   let nextType = null;          // pruebas/vídeos: tipo de la próxima arena
+  let nextDex = null;           // sandbox del admin: legendario de la próxima arena
 
   function start(forceType) {
     if (arena) return;
     forceType = forceType || nextType; nextType = null;
     let pool = G.DEX.filter(p => p.leg && G.SPRITE_META[p.dex]);
+    // Sandbox del admin: un legendario concreto.
+    if (nextDex && pool.some(p => p.dex === nextDex)) { pool = pool.filter(p => p.dex === nextDex); forceType = null; }
+    nextDex = null;
     if (forceType && pool.some(p => p.types.includes(forceType))) pool = pool.filter(p => p.types.includes(forceType));
     // Los legendarios que aún no has vencido salen 4 veces más (menos repetidos).
     const beaten = (G.DB.save && G.DB.save.legends) || {};
@@ -289,6 +293,8 @@ G.Rift = (() => {
     /** Para pruebas: arena de un tipo ya. */
     debugArena(type) { start(type); },
     /** Para vídeos: la próxima grieta en la que entres será de este tipo. */
-    debugNextType(type) { nextType = type; }
+    debugNextType(type) { nextType = type; },
+    /** Sandbox del admin: arena ya, contra este legendario. */
+    debugLegend(dex) { if (arena) return false; nextDex = dex; start(); return true; }
   };
 })();
