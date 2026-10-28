@@ -127,6 +127,7 @@ G.LayoutUI = (() => {
     G.Settings.set('stickMode', mode);
     G.UI.toast('Botones colocados');
     close();
+    if (G.SettingsUI && G.SettingsUI.refresh) G.SettingsUI.refresh();   // Ajustes > Controles enseña el mismo joystick
   }
 
   function open() {

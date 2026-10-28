@@ -108,6 +108,9 @@ G.SettingsUI = (() => {
         + `<p class="sub">Pon el dedo en cualquier parte y arrastra para moverte: el joystick aparece donde tocas. Toca un ataque de abajo para cambiarlo y el botón de arriba a la derecha para pausar. Se juega en horizontal.</p>`
         + `<div class="set-row"><div class="grow"><b>Tamaño del joystick</b><small>Cuánto hay que arrastrar el dedo.</small></div></div>`
         + choice('stick', [[0.8, 'Pequeño'], [1, 'Normal'], [1.25, 'Grande']])
+        // Copia personal: el mismo ajuste (stickMode) que el editor de «Colocar los botones».
+        + `<div class="set-row"><div class="grow"><b>Joystick</b><small>Flotante: aparece donde pones el dedo. Fijo: siempre en el mismo sitio.</small><small>Anclado: aparece donde pones el dedo y se queda ahí hasta que lo levantas.</small></div></div>`
+        + choice('stickMode', [['float', 'Flotante'], ['anchor', 'Anclado'], ['fixed', 'Fijo']])
         + `<div class="set-row"><div class="grow"><b>Colocar los botones</b><small>Pon los ataques, la pausa y el joystick (fijo, si quieres) donde quieras de la pantalla.</small></div>
              <button class="btn small" id="set-layout">Colocar</button></div>`
         + section('En PC')
@@ -201,5 +204,7 @@ G.SettingsUI = (() => {
     G.DB.logout().then(() => G.Flow.toLogin());
   }
 
-  return { init, open, close, get isOpen() { return isOpen(); } };
+  /** Vuelve a pintar la pestaña abierta (p. ej. al guardar «Colocar los botones», que cambia el joystick). */
+  const refresh = () => { if (isOpen()) render(); };
+  return { init, open, close, refresh, get isOpen() { return isOpen(); } };
 })();
